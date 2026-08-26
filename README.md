@@ -1,4 +1,4 @@
-# cat-charity-2
+# QRkot-spreadsheets
 
 ## Автор
 * ФИО: Анохин Денис
@@ -47,8 +47,3 @@ alembic upgrade head
 ```bash
 uvicorn app.main:app --reload
 ```
-
-После запуска API, документация будет доступна по адресу:
-
-[Swagger](http://127.0.0.1:8000/docs)
-[ReDoc](http://127.0.0.1:8000/redoc)
