@@ -91,4 +91,5 @@ async def delete_charity_project(
     charity_project = await charity_project_crud.remove(
         charity_project, session
     )
+    await session.commit()
     return charity_project

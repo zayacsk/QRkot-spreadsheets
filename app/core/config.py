@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     first_superuser_email: Optional[EmailStr] = 'root@admin.ru'
     first_superuser_password: Optional[str] = 'root'
     yandex_disk_token: Optional[str] = None
+    yandex_disk_base_url: str = 'https://cloud-api.yandex.net/v1/disk'
     report_format: str = '%Y.%m.%d %H:%M:%S'
     model_config = SettingsConfigDict(env_file='.env')
 

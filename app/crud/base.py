@@ -70,9 +70,11 @@ class CRUDBase:
         self,
         db_obj,
         session: AsyncSession,
+        commit: bool = False
     ):
         await session.delete(db_obj)
-        await session.commit()
+        if commit:
+            await session.commit()
         return db_obj
 
     async def get_uninvested_objects(

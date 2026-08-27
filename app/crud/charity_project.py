@@ -19,17 +19,15 @@ class CRUDCharityProject(CRUDBase):
         db_project_id = db_project_id.scalars().first()
         return db_project_id
 
-    async def get_projects_by_completion_rate(
+    async def get_fully_invested_projects(
         self,
         session: AsyncSession
     ):
-        projects = await session.execute(
+        return (await session.execute(
             select(CharityProject).where(
                 CharityProject.fully_invested.is_(True)
             )
-        )
-        projects = projects.scalars().all()
-        return projects
+        )).scalars().all()
 
 
 charity_project_crud = CRUDCharityProject(CharityProject)

@@ -1,11 +1,39 @@
 import io
 from datetime import datetime, timedelta
-from typing import Any, List
+from typing import Any
 
 import xlsxwriter
 
 from app.core.config import settings
 from app.core.yandex_client import YandexDiskClient
+
+TITLE_FORMAT = {
+    'bold': True,
+    'font_size': 14,
+}
+
+HEADER_FORMAT = {
+    'bold': True,
+    'bg_color': '#2F75B5',
+    'font_color': 'white',
+    'border': 1,
+    'align': 'left',
+}
+
+CELL_FORMAT = {
+    'border': 1,
+    'align': 'left',
+}
+
+TOTAL_CELL_FORMAT = {
+    'bold': True,
+    'border': 1,
+    'align': 'left',
+}
+
+HEADERS = ['Название проекта', 'Время сбора', 'Описание']
+
+MAX_FILENAME_LENGTH = 255
 
 
 def format_time_delta(delta: timedelta) -> str:
@@ -19,7 +47,7 @@ def format_time_delta(delta: timedelta) -> str:
 
 
 async def create_simple_report(
-    charity_projects: List[Any],
+    charity_projects: list[Any],
     yandex_client: YandexDiskClient,
     folder: str = 'QRKot Reports'
 ) -> str:
@@ -27,28 +55,20 @@ async def create_simple_report(
     now_date_time = now.strftime(settings.report_format)
     safe_filename = f'Отчет_{now_date_time}'.replace(
         ':', '-').replace(' ', '_').replace('/', '-')
+    if len(safe_filename) > MAX_FILENAME_LENGTH:
+        raise ValueError('Слишком длинное имя файла')
     upload_url, file_path = await yandex_client.create_excel_file(
         safe_filename, folder
     )
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output)
     worksheet = workbook.add_worksheet('Отчет')
-    title_format = workbook.add_format({'bold': True, 'font_size': 14})
-    header_format = workbook.add_format({
-        'bold': True,
-        'bg_color': '#2F75B5',
-        'font_color': 'white',
-        'border': 1,
-        'align': 'left'
-    })
-    cell_format = workbook.add_format({'border': 1, 'align': 'left'})
-    total_cell_format = workbook.add_format(
-        {'bold': True, 'border': 1, 'align': 'left'}
-    )
+    title_format = workbook.add_format(TITLE_FORMAT)
+    header_format = workbook.add_format(HEADER_FORMAT)
+    cell_format = workbook.add_format(CELL_FORMAT)
+    total_cell_format = workbook.add_format(TOTAL_CELL_FORMAT)
     worksheet.merge_range('A1:C1', f'Отчёт от {now_date_time}', title_format)
-    for col, header in enumerate(
-        ['Название проекта', 'Время сбора', 'Описание']
-    ):
+    for col, header in enumerate(HEADERS):
         worksheet.write(1, col, header, header_format)
     current_row = 2
     for project in charity_projects:
@@ -69,5 +89,4 @@ async def create_simple_report(
     workbook.close()
     output.seek(0)
     await yandex_client.upload_file(upload_url, output.getvalue())
-    public_url = await yandex_client.publish_file(file_path)
-    return public_url
+    return await yandex_client.publish_file(file_path)

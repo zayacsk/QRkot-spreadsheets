@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_async_session
@@ -25,19 +26,14 @@ ERROR_CREATE_REPORT = 'Ошибка при создании отчёта: {error
 )
 async def post_report(session: SessionDep, yandex_client: YaDiskClientDep):
     charity_projects = (
-        await charity_project_crud.get_projects_by_completion_rate(session)
+        await charity_project_crud.get_fully_invested_projects(session)
     )
-    if not charity_projects:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_NOT_FOUND
-        )
     try:
         public_url = await create_simple_report(
             charity_projects, yandex_client
         )
         return public_url
-    except Exception as error:
+    except httpx.HTTPStatusError as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ERROR_CREATE_REPORT.format(error)
