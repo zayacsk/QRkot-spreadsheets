@@ -22,6 +22,10 @@ EXCEL_CONTENT_TYPE = (
 )
 
 
+class YandexDiskError(Exception):
+    pass
+
+
 class YandexDiskClient:
     def __init__(self):
         self._client: Optional[httpx.AsyncClient] = None
@@ -85,7 +89,7 @@ class YandexDiskClient:
             )
         except httpx.HTTPStatusError as error:
             if error.response.status_code != status.HTTP_409_CONFLICT:
-                raise
+                raise YandexDiskError from error
 
 
 async def get_yandex_client():

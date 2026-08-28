@@ -33,7 +33,12 @@ TOTAL_CELL_FORMAT = {
 
 HEADERS = ['Название проекта', 'Время сбора', 'Описание']
 
-MAX_FILENAME_LENGTH = 255
+MAX_EXCEL_ROWS = 1_048_576
+SERVICE_ROWS_COUNT = 4
+MAX_PROJECTS_COUNT = MAX_EXCEL_ROWS - SERVICE_ROWS_COUNT
+
+ERROR_NO_PROJECTS = 'Список проектов пуст. Нет данных для отчета'
+ERROR_PROJECTS_LIMIT = 'Количество проектов: {} превышает лимит строк Excel {}'
 
 
 def format_time_delta(delta: timedelta) -> str:
@@ -51,12 +56,16 @@ async def create_simple_report(
     yandex_client: YandexDiskClient,
     folder: str = 'QRKot Reports'
 ) -> str:
+    if not charity_projects:
+        raise ValueError(ERROR_NO_PROJECTS)
+    if len(charity_projects) > MAX_PROJECTS_COUNT:
+        raise ValueError(ERROR_PROJECTS_LIMIT.format(
+            len(charity_projects), MAX_PROJECTS_COUNT
+        ))
     now = datetime.now()
     now_date_time = now.strftime(settings.report_format)
     safe_filename = f'Отчет_{now_date_time}'.replace(
         ':', '-').replace(' ', '_').replace('/', '-')
-    if len(safe_filename) > MAX_FILENAME_LENGTH:
-        raise ValueError('Слишком длинное имя файла')
     upload_url, file_path = await yandex_client.create_excel_file(
         safe_filename, folder
     )
@@ -70,16 +79,15 @@ async def create_simple_report(
     worksheet.merge_range('A1:C1', f'Отчёт от {now_date_time}', title_format)
     for col, header in enumerate(HEADERS):
         worksheet.write(1, col, header, header_format)
-    current_row = 2
-    for project in charity_projects:
+    for row, project in enumerate(charity_projects, start=2):
         duration = format_time_delta(project.close_date - project.create_date)
-        worksheet.write(current_row, 0, project.name, cell_format)
-        worksheet.write(current_row, 1, duration, cell_format)
-        worksheet.write(current_row, 2, project.description, cell_format)
-        current_row += 1
+        worksheet.write(row, 0, project.name, cell_format)
+        worksheet.write(row, 1, duration, cell_format)
+        worksheet.write(row, 2, project.description, cell_format)
+    total_row = len(charity_projects) + 2
     worksheet.merge_range(
-        current_row, 0,
-        current_row, 2,
+        total_row, 0,
+        total_row, 2,
         f'Всего проектов: {len(charity_projects)}',
         total_cell_format
     )

@@ -20,8 +20,8 @@
 Клонировать репозиторий и перейти в него:
 
 ```bash
-git clone https://github.com/zayacsk/cat-charity-2.git
-cd cat-charity-2
+git clone https://github.com/zayacsk/QRkot-spreadsheets.git
+cd QRkot-spreadsheets
 ```
 
 Создать и активировать виртуальное окружение:
